@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 
 export default function LoginPage() {
   function signIn() {
-    window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/GitFork/login`
+    window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/github/login`
   }
 
   return (

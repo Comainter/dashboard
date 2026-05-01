@@ -1,6 +1,6 @@
 
 import { redirect } from 'next/navigation'
 
-export default function Page() {
-  redirect('/repositeries')
+export default async function Dashboard() {
+  return redirect('/repositeries')
 }
