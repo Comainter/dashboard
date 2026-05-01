@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 
-import RepoTable from "@/components/dashboard/repo-table"
+import RepoTable, { type Repository } from "@/components/dashboard/repo-table"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -19,15 +19,6 @@ import { Plus, Search } from "lucide-react"
 import { User } from "@/type"
 import Link from "next/link"
 
-export type GitHubRepo = {
-  id: number;
-  full_name: string;
-  private?: boolean;
-  default_branch?: string;
-  html_url?: string;
-  language?: string | null;
-};
-
 type Installation = {
   installation_id: number;
 };
@@ -35,55 +26,40 @@ type Installation = {
 
 export default function Repositeriespage({user}:{user:User}) {
   const [query, setQuery] = useState("")
-  const [repoData,setRepoData]=useState<GitHubRepo[]>([])
+  const [repoData,setRepoData]=useState<Repository[]>([])
   const [, setInstallations] = useState<Installation[]>([])
   const [selectedInstallation, setSelectedInstallation] = useState<number | null>(null)
 
-  useEffect(() => {
-    let isMounted = true
 
-    const fetchInstallations = async () => {
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/github/installations`, {
-          credentials: "include"
-        })
-        const data: Installation[] = await res.json()
-
-        if (!isMounted) return
-
-        setInstallations(data)
-        const firstInstallation = data.at(0)
-        if (firstInstallation) {
-          setSelectedInstallation(firstInstallation.installation_id)
-        }
-      } catch (error) {
-        console.error("Failed to fetch installations", error)
-      }
-    }
-
-    fetchInstallations()
-
-    return () => {
-      isMounted = false
-    }
-  }, [])
 
   useEffect(() => {
-    if (!selectedInstallation) return
+
 
     let isMounted = true
 
     const fetchRepos = async () => {
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/github/repos/${selectedInstallation}`,
-          { credentials: "include" }
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/github/repo-stats`,
+          {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              installation_id: null,
+              owner: null,
+              repo: null,
+              branch: null
+            }),
+          }
         )
-        const data: { repositories?: GitHubRepo[] } = await res.json()
+        const data: { items?: Repository[] } = await res.json()
 
         if (!isMounted) return
 
-        setRepoData(data.repositories ?? [])
+        setRepoData(data.items ?? [])
       } catch (error) {
         console.error("Failed to fetch repositories", error)
       }
@@ -95,7 +71,7 @@ export default function Repositeriespage({user}:{user:User}) {
       isMounted = false
     }
 
-  }, [selectedInstallation])
+  }, [])
 
 
   return (
@@ -140,7 +116,7 @@ export default function Repositeriespage({user}:{user:User}) {
             </Link>
           </div>
         </section>
-        <RepoTable query={query} />
+        <RepoTable query={query} repositories={repoData} />
       </main>
     </div>
   )

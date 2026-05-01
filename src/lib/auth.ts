@@ -3,8 +3,9 @@ import { redirect } from 'next/navigation'
 
 export async function getUser() {
   const cookieStore = await cookies()
-
+  console.log(cookieStore)
   const session = cookieStore.get('session')
+  console.log(session?.value)
 
   const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users/me`, {
     headers: {

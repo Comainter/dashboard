@@ -23,7 +23,7 @@ export default function NavProjects({
     name: string
     url: string
     icon: LucideIcon,
-    isActive:Boolean
+    isActive?:boolean
   }[]
 }) {
   const { isMobile } = useSidebar()

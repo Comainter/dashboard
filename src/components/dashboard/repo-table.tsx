@@ -8,7 +8,6 @@ import {
   FolderGit2,
   GitBranch,
   MoreHorizontal,
-  Star,
 } from "lucide-react"
 
 import {
@@ -33,113 +32,33 @@ import {
 } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
 
-type Repository = {
-  name: string
-  description: string
-  visibility: "Private" | "Public" | "Internal"
-  status: "Healthy" | "Review" | "At Risk"
+export type Repository = {
+  status: string
   branch: string
-  updated: string
-  activity: string
-  score: string
-  pullRequests: number
-  issues: number
-  stars: string
-  contributors: string[]
+  last_indexed_at: string
+  repository: {
+    id: number
+    name: string
+    full_name: string
+    private: boolean
+    updated_at: string
+  }
 }
 
-const repositories: Repository[] = [
-  {
-    name: "comainter-dashboard",
-    description: "Main analytics workspace powering the executive dashboard.",
-    visibility: "Private",
-    status: "Healthy",
-    branch: "main",
-    updated: "5 minutes ago",
-    activity: "12 deploys this week",
-    score: "94%",
-    pullRequests: 6,
-    issues: 14,
-    stars: "2.4k",
-    contributors: ["DK", "AR", "SJ", "MV"],
-  },
-  {
-    name: "comainter-api",
-    description: "Shared service layer for repositories, activity feeds, and auth.",
-    visibility: "Internal",
-    status: "Healthy",
-    branch: "release/v2",
-    updated: "22 minutes ago",
-    activity: "8 merged PRs today",
-    score: "91%",
-    pullRequests: 4,
-    issues: 9,
-    stars: "1.8k",
-    contributors: ["TN", "DP", "AS"],
-  },
-  {
-    name: "repository-agent",
-    description: "Automation rules for triage, tagging, and code ownership workflows.",
-    visibility: "Private",
-    status: "Review",
-    branch: "staging",
-    updated: "1 hour ago",
-    activity: "Needs reviewer assignment",
-    score: "72%",
-    pullRequests: 11,
-    issues: 21,
-    stars: "846",
-    contributors: ["PK", "DS", "AR"],
-  },
-  {
-    name: "design-system",
-    description: "Component primitives, tokens, and dashboard-specific UI patterns.",
-    visibility: "Public",
-    status: "Healthy",
-    branch: "main",
-    updated: "3 hours ago",
-    activity: "Library release in progress",
-    score: "96%",
-    pullRequests: 3,
-    issues: 5,
-    stars: "5.2k",
-    contributors: ["EL", "VK", "NJ", "RT"],
-  },
-  {
-    name: "ops-console",
-    description: "Internal tooling for monitoring jobs, incidents, and alerts.",
-    visibility: "Private",
-    status: "At Risk",
-    branch: "hotfix/cache",
-    updated: "Yesterday",
-    activity: "2 failing checks",
-    score: "61%",
-    pullRequests: 9,
-    issues: 18,
-    stars: "690",
-    contributors: ["SM", "AR"],
-  },
-]
-
-const statusClasses: Record<Repository["status"], string> = {
-  Healthy:
-    "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-  Review:
-    "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300",
-  "At Risk":
-    "border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-300",
-}
-
-const visibilityClasses: Record<Repository["visibility"], string> = {
+const visibilityClasses: Record<"Private" | "Public", string> = {
   Private:
     "border-border/70 bg-muted/70 text-foreground/80",
-  Internal:
-    "border-sky-500/20 bg-sky-500/10 text-sky-700 dark:text-sky-300",
   Public:
     "border-violet-500/20 bg-violet-500/10 text-violet-700 dark:text-violet-300",
 }
 
-export default function RepoTable({ query = "" }: { query?: string }) {
+export default function RepoTable({
+  query = "",
+  repositories = [],
+}: {
+  query?: string
+  repositories: Repository[]
+}) {
   const [selectedRepositories, setSelectedRepositories] = useState<string[]>([])
 
   const filteredRepositories = useMemo(() => {
@@ -151,26 +70,26 @@ export default function RepoTable({ query = "" }: { query?: string }) {
 
     return repositories.filter((repository) =>
       [
-        repository.name,
-        repository.description,
+        repository.repository.name,
+        repository.repository.full_name,
         repository.branch,
         repository.status,
-        repository.visibility,
+        repository.repository.private ? "private" : "public",
       ].some((value) => value.toLowerCase().includes(normalizedQuery))
     )
-  }, [query])
+  }, [query, repositories])
 
   const allVisibleSelected =
     filteredRepositories.length > 0 &&
     filteredRepositories.every((repository) =>
-      selectedRepositories.includes(repository.name)
+      selectedRepositories.includes(String(repository.repository.id))
     )
 
-  function toggleRepository(name: string) {
+  function toggleRepository(repoId: string) {
     setSelectedRepositories((current) =>
-      current.includes(name)
-        ? current.filter((item) => item !== name)
-        : [...current, name]
+      current.includes(repoId)
+        ? current.filter((item) => item !== repoId)
+        : [...current, repoId]
     )
   }
 
@@ -179,7 +98,7 @@ export default function RepoTable({ query = "" }: { query?: string }) {
       setSelectedRepositories((current) => [
         ...new Set([
           ...current,
-          ...filteredRepositories.map((repository) => repository.name),
+          ...filteredRepositories.map((repository) => String(repository.repository.id)),
         ]),
       ])
       return
@@ -188,7 +107,7 @@ export default function RepoTable({ query = "" }: { query?: string }) {
     setSelectedRepositories((current) =>
       current.filter(
         (name) =>
-          !filteredRepositories.some((repository) => repository.name === name)
+          !filteredRepositories.some((repository) => String(repository.repository.id) === name)
       )
     )
   }
@@ -221,9 +140,9 @@ export default function RepoTable({ query = "" }: { query?: string }) {
           <TableBody>
             {filteredRepositories.map((repository) => (
               <TableRow
-                key={repository.name}
+                key={repository.repository.id}
                 data-state={
-                  selectedRepositories.includes(repository.name)
+                  selectedRepositories.includes(String(repository.repository.id))
                     ? "selected"
                     : undefined
                 }
@@ -232,9 +151,9 @@ export default function RepoTable({ query = "" }: { query?: string }) {
                 <TableCell className="pl-5">
                   <input
                     type="checkbox"
-                    aria-label={`Select ${repository.name}`}
-                    checked={selectedRepositories.includes(repository.name)}
-                    onChange={() => toggleRepository(repository.name)}
+                    aria-label={`Select ${repository.repository.name}`}
+                    checked={selectedRepositories.includes(String(repository.repository.id))}
+                    onChange={() => toggleRepository(String(repository.repository.id))}
                     className="size-4 rounded border-border align-middle accent-primary"
                   />
                 </TableCell>
@@ -245,12 +164,12 @@ export default function RepoTable({ query = "" }: { query?: string }) {
                     </div>
                     <div className="space-y-2">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-semibold">{repository.name}</p>
-                        <Chip className={visibilityClasses[repository.visibility]}>
-                          {repository.visibility}
+                        <p className="font-semibold">{repository.repository.name}</p>
+                        <Chip className={visibilityClasses[repository.repository.private ? "Private" : "Public"]}>
+                          {repository.repository.private ? "Private" : "Public"}
                         </Chip>
                       </div>
-                     
+                      <p className="text-sm text-muted-foreground">{repository.repository.full_name}</p>
                       <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                         <span className="inline-flex items-center gap-1.5">
                           <GitBranch className="size-3.5" />
@@ -258,43 +177,28 @@ export default function RepoTable({ query = "" }: { query?: string }) {
                         </span>
                         <span className="inline-flex items-center gap-1.5">
                           <Clock3 className="size-3.5" />
-                          {repository.updated}
-                        </span>
-                        <span className="inline-flex items-center gap-1.5">
-                          <Star className="size-3.5" />
-                          {repository.stars}
+                          {new Date(repository.last_indexed_at || repository.repository.updated_at).toLocaleString()}
                         </span>
                       </div>
                     </div>
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="space-y-2">
-                    <Chip className={statusClasses[repository.status]}>
-                      {repository.status}
-                    </Chip>
-                    <p className="text-xs text-muted-foreground">
-                      {repository.pullRequests} PRs and {repository.issues} issues
-                    </p>
-                  </div>
+                  <Chip className="border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+                    {repository.status}
+                  </Chip>
                 </TableCell>
                 <TableCell>
                   <div className="space-y-2">
-                    <AvatarGroup>
-                      {repository.contributors.map((contributor) => (
-                        <Avatar key={contributor} className="border border-background">
-                          <AvatarFallback>{contributor}</AvatarFallback>
-                        </Avatar>
-                      ))}
-                    </AvatarGroup>
+                    <AvatarGroup><Avatar className="border border-background"><AvatarFallback>{repository.repository.name.slice(0, 2).toUpperCase()}</AvatarFallback></Avatar></AvatarGroup>
                     <p className="text-xs text-muted-foreground">
-                      {repository.contributors.length} active contributors
+                      Repo ID: {repository.repository.id}
                     </p>
                   </div>
                 </TableCell>
                 <TableCell className="pr-5 text-right">
                   <div className="flex justify-end gap-2">
-                    <Button variant="outline" size="sm" className="rounded-full">
+                    <Button variant="outline" size="sm" className="rounded-full" disabled>
                       Open
                       <ArrowUpRight className="size-4" />
                     </Button>
