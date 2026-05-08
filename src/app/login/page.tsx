@@ -1,51 +1,167 @@
 "use client"
 
-import { ArrowRight, GitFork } from "lucide-react"
+import { useState } from "react"
+import { useSearchParams } from "next/navigation"
+
+import {
+  ArrowRight,
+  GitBranchIcon,
+  GitBranch,
+  Boxes,
+} from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Spinner } from "@/components/ui/spinner"
+import Link from "next/link"
+
+const providers = [
+  {
+    name: "GitHub",
+    icon: GitBranchIcon,
+    provider: "github",
+  },
+  {
+    name: "GitLab",
+    icon: GitBranch,
+    provider: "gitlab",
+  },
+  {
+    name: "Bitbucket",
+    icon: Boxes,
+    provider: "bitbucket",
+  },
+]
 
 export default function LoginPage() {
-  function signIn() {
-    window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/github/login`
+  const searchParams = useSearchParams()
+
+  const error = searchParams.get("error")
+
+  const [loadingProvider, setLoadingProvider] =
+    useState<string | null>(null)
+
+  function signIn(provider: string) {
+    if (loadingProvider) return
+
+    setLoadingProvider(provider)
+
+    window.location.href =
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/${provider}/login`
   }
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.95),transparent_35%),linear-gradient(180deg,rgba(250,250,250,1),rgba(244,244,245,1))] px-6 py-10">
-      <div className="absolute inset-0 -z-10">
-        <div className="absolute left-1/2 top-24 size-72 -translate-x-1/2 rounded-full bg-zinc-300/25 blur-3xl" />
-        <div className="absolute inset-x-0 top-0 h-px bg-black/10" />
+    <main className="relative min-h-screen overflow-hidden bg-black text-white">
+      
+      {/* Grid */}
+      <div className="absolute inset-0 opacity-[0.06]">
+        <div className="animated-grid absolute inset-0" />
       </div>
 
-      <section className="w-full max-w-md rounded-[2rem] border border-black/10 bg-white/90 p-8 shadow-[0_30px_100px_rgba(15,23,42,0.12)] backdrop-blur sm:p-10">
-        <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-5 inline-flex size-14 items-center justify-center rounded-2xl bg-zinc-950 text-white shadow-lg shadow-zinc-950/15">
-            <GitFork className="size-7" />
+      {/* Glow */}
+      <div className="animated-glow absolute left-1/2 top-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/10 blur-3xl" />
+
+      {/* Scan Line */}
+      <div className="scan-lines absolute inset-0 opacity-[0.03]" />
+
+      {/* Noise */}
+      <div className="noise absolute inset-0 opacity-[0.04]" />
+
+      <div className="relative z-10 grid min-h-screen grid-cols-1 lg:grid-cols-2">
+        
+        {/* Left */}
+        <section className="flex items-center px-8 py-20 lg:px-24">
+          <div className="animate-fade-up max-w-xl">
+            <div className="mb-6 inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-zinc-300 backdrop-blur">
+              Maintainer Infrastructure
+            </div>
+
+            <h1 className="text-5xl font-semibold tracking-tight lg:text-6xl">
+              Manage open source at scale.
+            </h1>
+
+            <p className="mt-6 text-lg leading-8 text-zinc-400">
+              Centralize repository discussions, automate
+              maintainer workflows, and manage issue operations
+            </p>
           </div>
-          <p className="mb-2 text-sm font-medium text-zinc-500">Comaniter</p>
-          <h1 className="text-3xl font-semibold tracking-tight text-zinc-950">
-            Sign in with GitHub
-          </h1>
-          <p className="mt-3 max-w-sm text-sm leading-6 text-zinc-600">
-            Continue to your dashboard and manage your work in one place.
-          </p>
-        </div>
+        </section>
 
-        <Button
-          size="lg"
-          onClick={signIn}
-          className="h-12 w-full justify-between rounded-2xl px-5 text-sm font-semibold shadow-lg shadow-zinc-950/10"
-        >
-          <span className="flex items-center gap-3">
-            <GitFork className="size-5" />
-            Continue with GitHub
-          </span>
-          <ArrowRight className="size-4" />
-        </Button>
+        {/* Right */}
+        <section className="flex items-center justify-center px-6 py-20">
+          <div className="animate-fade-up w-full max-w-md rounded-[32px] border border-white/10 bg-white/[0.03] p-8 backdrop-blur-2xl">
+            <div className="mb-8">
+              <h2 className="text-2xl font-semibold">
+                Sign in
+              </h2>
 
-        <p className="mt-5 text-center text-xs leading-5 text-zinc-500">
-          You&apos;ll be redirected to GitHub to authenticate.
-        </p>
-      </section>
+              <p className="mt-2 text-sm text-zinc-400">
+                Continue with your repository provider.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {providers.map((provider) => {
+                const Icon = provider.icon
+
+                const loading =
+                  loadingProvider === provider.provider
+
+                return (
+                  <Button
+                    key={provider.provider}
+                    onClick={() =>
+                      signIn(provider.provider)
+                    }
+                    disabled={!!loadingProvider}
+                    variant="outline"
+                    className="h-14 w-full justify-between border-white/10 bg-white/5 text-white transition-all duration-300 hover:bg-white/10 hover:scale-[1.01]"
+                  >
+                    <span className="flex items-center gap-3">
+                      {loading ? (
+                        <Spinner data-icon="inline-start" />
+                      ) : (
+                        <Icon className="size-5" />
+                      )}
+
+                      Continue with {provider.name}
+                    </span>
+
+                    {!loading && (
+                      <ArrowRight className="size-4" />
+                    )}
+                  </Button>
+                )
+              })}
+            </div>
+
+            {error && (
+              <div className="mt-6 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-300">
+                Authentication failed or was cancelled.
+              </div>
+            )}
+
+<div className="mt-8 border-t border-white/10 pt-6">
+              <p className="text-center text-xs leading-6 text-zinc-500">
+                By continuing, you agree to our{" "}
+                <Link
+                  href="/terms-of-use"
+                  className="text-zinc-300 underline underline-offset-4 transition hover:text-white"
+                >
+                  Terms of Use
+                </Link>{" "}
+                and{" "}
+                <Link
+                  href="/privacy-policy"
+                  className="text-zinc-300 underline underline-offset-4 transition hover:text-white"
+                >
+                  Privacy Policy
+                </Link>
+                .
+              </p>
+            </div>
+          </div>
+        </section>
+      </div>
     </main>
   )
 }

@@ -1,5 +1,6 @@
 import AppSidebar from '@/components/dashboard/appsidebar'
 import { SidebarProvider } from '@/components/ui/sidebar'
+import { Toaster } from "@/components/ui/sonner"
 import React from 'react'
 
 export default function DashBoardLayout({children}:{children: React.ReactNode}) {
@@ -11,6 +12,7 @@ export default function DashBoardLayout({children}:{children: React.ReactNode}) 
         <main className="flex-1 w-full">
           {children}
         </main>
+        <Toaster />
       </div>
   </SidebarProvider>
   )
